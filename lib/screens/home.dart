@@ -21,14 +21,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadAccounts() async {
-    final response = await Supabase.instance.client
-        .from('accounts')
-        .select()
-        .order('email', ascending: true);
+    try {
+      final response = await Supabase.instance.client
+          .from('accounts')
+          .select()
+          .order(
+            'created_at',
+            ascending: false,
+          ); // Ordenar por fecha de creación
 
-    setState(() {
-      _accounts = List<Map<String, dynamic>>.from(response);
-    });
+      print('Cuentas cargadas: ${response.length}');
+
+      if (mounted) {
+        setState(() {
+          _accounts = List<Map<String, dynamic>>.from(response);
+        });
+      }
+    } catch (e) {
+      print('Error al cargar cuentas: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar cuentas: $e')));
+      }
+    }
   }
 
   @override
@@ -39,7 +55,14 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () => Navigator.pushNamed(context, '/filter'),
+            onPressed: () async {
+              final selected = await Navigator.pushNamed(context, '/filter');
+              if (selected != null && mounted) {
+                setState(() {
+                  _searchController.text = selected.toString(); // aplica filtro
+                });
+              }
+            },
           ),
           IconButton(
             icon: const Icon(Icons.add),
@@ -62,13 +85,13 @@ class _HomeScreenState extends State<HomeScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
-                hintText: 'Search',
+                hintText: 'Buscar por servicio',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
               onChanged: (value) {
-                setState(() {}); // para actualizar la búsqueda
+                setState(() {}); // actualiza la búsqueda
               },
             ),
           ),
@@ -82,9 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         final item = _accounts[index];
                         final icon = _getIconForService(item['service']);
                         final email = item['email'] ?? '';
+                        final service = item['service'] ?? '';
 
                         if (_searchController.text.isNotEmpty &&
-                            !email.toLowerCase().contains(
+                            !service.toLowerCase().contains(
                               _searchController.text.toLowerCase(),
                             )) {
                           return const SizedBox.shrink();
@@ -92,7 +116,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         return ListTile(
                           leading: Icon(icon),
-                          title: Text(email),
+                          title: Text(service),
+                          subtitle: Text(email),
                           onTap:
                               () => Navigator.pushNamed(
                                 context,

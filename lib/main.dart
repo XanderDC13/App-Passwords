@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:passwords/auth/login.dart';
 import 'package:passwords/screens/home.dart';
+import 'package:passwords/screens/addaccount.dart';
+import 'package:passwords/settings/filter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
@@ -19,11 +22,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final session = Supabase.instance.client.auth.currentSession;
     return MaterialApp(
-      title: '',
+      title: 'Password Manager',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(brightness: Brightness.dark),
-      home: const HomeScreen(),
+      home: session != null ? const HomeScreen() : const LoginScreen(),
+      routes: {
+        '/filter': (_) => const FilterScreen(),
+        '/add': (_) => const AddPasswordScreen(),
+      },
     );
   }
 }

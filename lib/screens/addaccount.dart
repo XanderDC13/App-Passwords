@@ -36,18 +36,28 @@ class _AddPasswordScreenState extends State<AddPasswordScreen> {
     setState(() => isLoading = true);
 
     final encryptedPassword = encryptPassword(passwordController.text);
+    final userId = Supabase.instance.client.auth.currentUser?.id;
 
-    await Supabase.instance.client.from('accounts').insert({
-      'website': websiteController.text.trim(),
-      'service': accountTypeController.text.trim(),
-      'email': emailController.text.trim(),
-      'password': encryptedPassword,
-      'username': usernameController.text.trim(),
-      'notes': notesController.text.trim(),
-    });
+    try {
+      await Supabase.instance.client.from('accounts').insert({
+        'user_id': userId,
+        'website': websiteController.text.trim(),
+        'service': accountTypeController.text.trim(),
+        'email': emailController.text.trim(),
+        'password': encryptedPassword,
+        'username': usernameController.text.trim(),
+        'notes': notesController.text.trim(),
+      });
 
-    if (context.mounted) {
-      Navigator.pop(context);
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
